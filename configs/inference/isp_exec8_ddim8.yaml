@@ -1,0 +1,6 @@
+postprocessing: normal
+exec_horizon: 8
+scheduler: ddim
+num_inference_steps: 8
+max_inferences: 0
+debug_dump: false

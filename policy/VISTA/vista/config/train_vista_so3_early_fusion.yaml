@@ -1,0 +1,23 @@
+defaults:
+  - train_vista
+  - _self_
+
+name: vista_so3_early_fusion
+
+policy:
+  _target_: vista.policy.vista_so3_early_fusion_policy.VISTAPolicy
+  tactile_sides: ["left"]
+  fusion_groups: 32
+
+logging:
+  name: vista_so3_early_fusion_demo${n_demo}
+  tags: ["${name}", "${task_name}", "${exp_name}", "fusion_ablation", "early_fusion", "so3"]
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+    subdir: ${hydra.job.num}

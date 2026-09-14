@@ -1,0 +1,4 @@
+postprocessing: temporal_agg
+exec_horizon: 1
+max_inferences: 20
+temporal_agg_k: 0.01

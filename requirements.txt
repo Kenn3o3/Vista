@@ -1,0 +1,27 @@
+# Install PyTorch and PyTorch3D with environment.yml first.
+numpy==1.23.3
+scipy==1.9.1
+numba==0.56.4
+h5py==3.7.0
+zarr==2.12.0
+numcodecs==0.10.2
+hydra-core==1.2.0
+omegaconf==2.2.3
+einops==0.4.1
+diffusers==0.11.1
+huggingface-hub==0.24.6
+dill==0.3.5.1
+escnn==1.0.11
+e3nn @ git+https://github.com/BoceHu/e3nn.git@b02616237eb936ec8586fe7d803c4a3de2588c09
+healpy==1.17.3
+wandb==0.23.1
+opencv-python==4.6.0.66
+imagecodecs==2022.9.26
+matplotlib==3.6.1
+pandas==2.2.3
+filelock==3.19.1
+threadpoolctl==3.1.0
+tqdm>=4.64,<5
+PyYAML>=6,<7
+psutil>=5.9,<8
+requests>=2.31,<3

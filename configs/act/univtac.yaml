@@ -1,0 +1,18 @@
+policy_name: ACT
+kind: univtac
+representation: ee
+train_config: train_config_ee
+deploy_config: policy/ACT/deploy_ee
+action_mode: ee_servo
+camera_names:
+  - cam_wrist
+tactile_names:
+  - tac_left
+  - tac_right
+state_dim: 8
+chunk_size: 50
+batch_size: 64
+num_steps: 4000
+uses_univtac_tactile_encoder: true
+tactile_ckpt: checkpoints/UniVTAC_encoder/best.pth
+temporal_agg: false

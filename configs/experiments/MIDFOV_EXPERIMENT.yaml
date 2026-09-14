@@ -1,0 +1,25 @@
+name: MIDFOV_EXPERIMENT
+tactile_sensor_type: gsmini
+tasks:
+  - grasp_classify
+  - insert_HDMI
+  - insert_tube
+  - insert_hole
+  - lift_bottle
+  - lift_can
+  - pull_out_key
+  - put_bottle_in_shelf
+collection:
+  save_frequency: 2
+  video_frequency: 2
+  render_frequency: 0
+  random_texture: false
+  use_seed: true
+evaluation:
+  save_frequency: 2
+  video_frequency: 1
+  render_frequency: 0
+  video_size: [1280, 480]
+env:
+  wrist_camera:
+    focal_length: 1.0

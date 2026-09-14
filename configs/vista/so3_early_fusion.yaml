@@ -1,0 +1,7 @@
+policy_name: VISTA
+hydra_config: train_vista_so3_early_fusion
+normalization: default
+action_horizon: 8
+n_obs_steps: 2
+n_action_steps: 8
+horizon: 16

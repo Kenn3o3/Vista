@@ -1,0 +1,5 @@
+# copied and modified from https://github.com/NVIDIA/warp/blob/main/.gitattributes
+* text=auto
+*.sh text eol=LF
+
+# copied from https://github.com/isaac-sim/IsaacLab/blob/main/.gitattributes

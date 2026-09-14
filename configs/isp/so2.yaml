@@ -1,0 +1,4 @@
+policy_name: ISP
+hydra_config: train_isp_so2
+normalization: default
+postprocessing: normal

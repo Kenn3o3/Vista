@@ -1,0 +1,4 @@
+policy_name: DP
+hydra_config: train_diffusion_unet_equidiff_tact
+normalization: default
+postprocessing: normal

@@ -1,0 +1,25 @@
+defaults:
+  - train_vista
+  - override task: univtac_vista_lr
+  - _self_
+
+name: vista_lr
+shape_meta: ${task.shape_meta}
+
+policy:
+  tactile_sides: ["left", "right"]
+  tactile_shape: [3, 84, 84]
+  right_tactile_shape: [3, 84, 84]
+
+logging:
+  name: vista_lr_demo${n_demo}
+  tags: ["${name}", "${task_name}", "${exp_name}"]
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+    subdir: ${hydra.job.num}

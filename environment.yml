@@ -1,0 +1,16 @@
+name: vista
+channels:
+  - pytorch
+  - pytorch3d
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pytorch=2.1.0
+  - torchvision=0.16.0
+  - pytorch-cuda=11.8
+  - pytorch3d=0.7.5
+  - gfortran
+  - pip:
+      - -r requirements.txt

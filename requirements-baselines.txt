@@ -1,0 +1,8 @@
+# Install requirements.txt first.
+robomimic==0.3.0
+timm==1.0.26
+packaging
+transformers<5
+imageio
+imageio-ffmpeg
+scikit-learn<1.7

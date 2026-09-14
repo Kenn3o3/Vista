@@ -1,0 +1,23 @@
+defaults:
+  - train_vista_so2
+  - _self_
+
+name: vista_so2_global_l0
+
+policy:
+  _target_: vista.policy.vista_so2_global_l0_policy.VISTAPolicy
+  tactile_global_dim: 1024
+  tactile_sides: ["left"]
+
+logging:
+  name: vista_so2_global_l0_demo${n_demo}
+  tags: ["${name}", "${task_name}", "${exp_name}", "fusion_ablation", "global_l0", "so2"]
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+    subdir: ${hydra.job.num}

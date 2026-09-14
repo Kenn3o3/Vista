@@ -1,0 +1,310 @@
+import copy
+from typing import Dict, Tuple
+
+import pytorch3d.transforms as pytorch3d_transforms
+import torch
+import torch.nn.functional as F
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from einops import reduce
+
+from vista.model.common.normalizer import LinearNormalizer
+from vista.model.common.rotation_transformer import RotationTransformer
+from vista.model.diffusion.mask_generator import LowdimMaskGenerator
+from vista.model.equi.equi_conditional_unet1d_c8 import EquiDiffusionUNet
+from vista.model.equi.equi_group_sampling import EquiGroupSamplingC8
+from vista.model.equi.vista_early_fusion_obs_encoder import VistaEarlyFusionObsEncoder
+from vista.model.vision.rot_randomizer import RotRandomizer, RotRandomizerForPrediction
+from vista.policy.base_image_policy import BaseImagePolicy
+from vista.policy.vista_so2_policy import VISTAPolicy as _SO2VISTAPolicy
+
+
+class VISTAPolicy(_SO2VISTAPolicy):
+    def __init__(
+        self,
+        shape_meta: dict,
+        noise_scheduler: DDPMScheduler,
+        horizon,
+        n_action_steps,
+        n_obs_steps,
+        num_inference_steps=None,
+        crop_shape=(76, 76),
+        N=8,
+        enc_n_hidden=128,
+        diffusion_step_embed_dim=256,
+        down_dims=(256, 512, 1024),
+        kernel_size=5,
+        n_groups=8,
+        cond_predict_scale=True,
+        rot_aug=False,
+        lmax=6,
+        visual_dim=1024,
+        tactile_dim=1024,
+        fused_dim=1024,
+        so3_dim=64,
+        initialize=True,
+        encoder="equiresnet50",
+        tactile_shape=(3, 84, 84),
+        right_tactile_shape=None,
+        tactile_sides=None,
+        allow_missing_tactile=False,
+        rec_level=3,
+        max_beta=1.5707963267948966,
+        attention_heads=8,
+        attention_head_dim=64,
+        tactile_mode="raw",
+        fusion_groups=32,
+        **kwargs,
+    ):
+        BaseImagePolicy.__init__(self)
+
+        action_shape = shape_meta["action"]["shape"]
+        assert len(action_shape) == 1
+        action_dim = action_shape[0]
+        obs_shape_meta = shape_meta["obs"]
+
+        if tactile_sides is None:
+            if "robot0_tactile_right_image" in obs_shape_meta:
+                tactile_sides = ("left", "right")
+            else:
+                tactile_sides = ("left",)
+
+        left_tactile_shape = obs_shape_meta.get(
+            "robot0_tactile_left_image",
+            {"shape": tactile_shape},
+        )["shape"]
+        if "robot0_tactile_right_image" in obs_shape_meta:
+            right_tactile_shape = obs_shape_meta["robot0_tactile_right_image"]["shape"]
+        elif right_tactile_shape is None:
+            right_tactile_shape = left_tactile_shape
+
+        self.enc = VistaEarlyFusionObsEncoder(
+            obs_shape=obs_shape_meta["robot0_eye_in_hand_image"]["shape"],
+            crop_shape=crop_shape,
+            n_hidden=enc_n_hidden,
+            N=8,
+            initialize=initialize,
+            lmax=lmax,
+            visual_dim=visual_dim,
+            tactile_dim=tactile_dim,
+            fused_dim=fused_dim,
+            so3_dim=so3_dim,
+            encoder=encoder,
+            tactile_shape=left_tactile_shape,
+            right_tactile_shape=right_tactile_shape,
+            tactile_sides=tactile_sides,
+            allow_missing_tactile=allow_missing_tactile,
+            rec_level=rec_level,
+            max_beta=max_beta,
+            attention_heads=attention_heads,
+            attention_head_dim=attention_head_dim,
+            tactile_mode=tactile_mode,
+            fusion_groups=fusion_groups,
+        )
+
+        obs_feature_dim = enc_n_hidden
+        global_cond_dim = obs_feature_dim * n_obs_steps
+
+        self.equi_sampler = EquiGroupSamplingC8(lmax=lmax, f_out=obs_feature_dim)
+
+        self.diff = EquiDiffusionUNet(
+            act_emb_dim=64,
+            local_cond_dim=None,
+            global_cond_dim=global_cond_dim,
+            diffusion_step_embed_dim=diffusion_step_embed_dim,
+            down_dims=down_dims,
+            kernel_size=kernel_size,
+            n_groups=n_groups,
+            cond_predict_scale=cond_predict_scale,
+            N=N,
+            lmax=lmax,
+        )
+
+        print("Enc params: %e" % sum(p.numel() for p in self.enc.parameters()))
+        print(
+            "Equi sampler params: %e"
+            % sum(p.numel() for p in self.equi_sampler.parameters())
+        )
+        print("Diff params: %e" % sum(p.numel() for p in self.diff.parameters()))
+
+        self.mask_generator = LowdimMaskGenerator(
+            action_dim=action_dim,
+            obs_dim=0,
+            max_n_obs_steps=n_obs_steps,
+            fix_obs_steps=True,
+            action_visible=False,
+        )
+        self.normalizer = LinearNormalizer()
+        self.rot_randomizer = RotRandomizer()
+        self.rot_randomizer2 = RotRandomizerForPrediction()
+
+        self.horizon = horizon
+        self.action_dim = action_dim
+        self.n_action_steps = n_action_steps
+        self.n_obs_steps = n_obs_steps
+        self.crop_shape = crop_shape
+        self.obs_feature_dim = obs_feature_dim
+        self.rot_aug = rot_aug
+        self.kwargs = kwargs
+
+        print("Data Augmentation: ", self.rot_aug)
+        print("n_obs_steps: ", n_obs_steps)
+
+        self.noise_scheduler = noise_scheduler
+        if num_inference_steps is None:
+            num_inference_steps = noise_scheduler.config.num_train_timesteps
+        self.num_inference_steps = num_inference_steps
+
+        self.register_buffer("ws_center", torch.tensor([0, 0, 0.8], dtype=torch.float32))
+        self.sixd2mat = RotationTransformer("rotation_6d", "matrix")
+
+    def set_ws_center(self, ws_center):
+        self.ws_center.copy_(ws_center)
+
+    def set_normalizer(self, normalizer: LinearNormalizer):
+        self.normalizer.load_state_dict(normalizer.state_dict())
+
+    def get_optimizer(
+        self,
+        weight_decay: float,
+        learning_rate: float,
+        betas: Tuple[float, float],
+        eps: float,
+    ) -> torch.optim.Optimizer:
+        return torch.optim.AdamW(
+            self.parameters(),
+            weight_decay=weight_decay,
+            lr=learning_rate,
+            betas=betas,
+            eps=eps,
+        )
+
+    def conditional_sample(
+        self,
+        condition_data,
+        condition_mask,
+        local_cond=None,
+        global_cond=None,
+        generator=None,
+        **kwargs,
+    ):
+        model = self.diff
+        scheduler = self.noise_scheduler
+        trajectory = torch.randn(
+            size=condition_data.shape,
+            dtype=condition_data.dtype,
+            device=condition_data.device,
+            generator=generator,
+        )
+        scheduler.set_timesteps(self.num_inference_steps)
+
+        for t in scheduler.timesteps:
+            trajectory[condition_mask] = condition_data[condition_mask]
+            results = self.equi_sampler(global_cond, trajectory)
+            model_output = model(
+                results["trajectory"],
+                t,
+                local_cond=local_cond,
+                global_cond=results["global_cond"],
+            )
+            trajectory = scheduler.step(
+                model_output, t, trajectory, generator=generator, **kwargs
+            ).prev_sample
+
+        trajectory[condition_mask] = condition_data[condition_mask]
+        return trajectory
+
+    def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        obs_dict = copy.deepcopy(obs_dict)
+        obs_dict["robot0_eef_pos"] -= self.ws_center
+        nobs = self.normalizer.normalize(obs_dict)
+        value = next(iter(nobs.values()))
+        B, To = value.shape[:2]
+        T = self.horizon
+        Da = self.action_dim
+
+        device = self.device
+        dtype = self.dtype
+
+        global_cond = self.enc(nobs)
+        cond_data = torch.zeros(size=(B, T, Da), device=device, dtype=dtype)
+        cond_mask = torch.zeros_like(cond_data, dtype=torch.bool)
+
+        nsample = self.conditional_sample(
+            cond_data,
+            cond_mask,
+            local_cond=None,
+            global_cond=global_cond,
+            **self.kwargs,
+        )
+
+        naction_pred = nsample[..., :Da]
+        rot_mat = pytorch3d_transforms.rotation_6d_to_matrix(
+            naction_pred[..., 3:9].reshape(-1, 6)
+        )
+        rot_6d = rot_mat.transpose(2, 1)[:, :2, :]
+        rot_6d = rot_6d.reshape(B, T, 6)
+        naction_pred = torch.cat(
+            (naction_pred[..., :3], rot_6d, naction_pred[..., 9:]), dim=-1
+        )
+
+        action_pred = self.normalizer["action"].unnormalize(naction_pred)
+        action_pred[:, :, :3] += self.ws_center
+        start = To - 1
+        end = start + self.n_action_steps
+        action = action_pred[:, start:end]
+        return {"action": action, "action_pred": action_pred}
+
+    def compute_loss(self, batch):
+        batch = copy.deepcopy(batch)
+        batch["action"][:, :, :3] -= self.ws_center
+        batch["obs"]["robot0_eef_pos"] -= self.ws_center
+
+        nobs = self.normalizer.normalize(batch["obs"])
+        nactions = self.normalizer["action"].normalize(batch["action"])
+
+        if self.rot_aug:
+            nobs, nactions = self.rot_randomizer(nobs, nactions)
+
+        rot_mat = pytorch3d_transforms.rotation_6d_to_matrix(
+            nactions[:, :, 3:9].reshape(-1, 6)
+        )
+        rot_xy = rot_mat.transpose(2, 1)[:, :2, :].reshape(
+            nactions.shape[0], nactions.shape[1], 6
+        )
+        nactions = torch.cat((nactions[:, :, :3], rot_xy, nactions[:, :, 9:]), dim=-1)
+
+        trajectory = nactions
+        cond_data = trajectory
+        global_cond = self.enc(nobs)
+        condition_mask = self.mask_generator(trajectory.shape)
+        noise = torch.randn(trajectory.shape, device=trajectory.device)
+        bsz = trajectory.shape[0]
+        timesteps = torch.randint(
+            0,
+            self.noise_scheduler.config.num_train_timesteps,
+            (bsz,),
+            device=trajectory.device,
+        ).long()
+        noisy_trajectory = self.noise_scheduler.add_noise(trajectory, noise, timesteps)
+        loss_mask = ~condition_mask
+        noisy_trajectory[condition_mask] = cond_data[condition_mask]
+        results = self.equi_sampler(global_cond, noisy_trajectory)
+        pred = self.diff(
+            results["trajectory"],
+            timesteps,
+            local_cond=None,
+            global_cond=results["global_cond"],
+        )
+
+        pred_type = self.noise_scheduler.config.prediction_type
+        if pred_type == "epsilon":
+            target = noise
+        elif pred_type == "sample":
+            target = trajectory
+        else:
+            raise ValueError(f"Unsupported prediction type {pred_type}")
+
+        loss = F.mse_loss(pred, target, reduction="none")
+        loss = loss * loss_mask.type(loss.dtype)
+        loss = reduce(loss, "b ... -> b (...)", "mean")
+        return loss.mean()

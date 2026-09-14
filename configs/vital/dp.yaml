@@ -1,0 +1,11 @@
+policy_name: ViTAL
+kind: dp
+hydra_config: train_diffusion_unet_vital
+normalization: default
+postprocessing: normal
+action_horizon: 8
+n_obs_steps: 2
+n_action_steps: 8
+horizon: 16
+gelsight_backbone_path: checkpoints/VITAL_encoder/gelsight_encoder.pth
+vision_backbone_path: checkpoints/VITAL_encoder/vision_encoder.pth

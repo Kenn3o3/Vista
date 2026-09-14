@@ -1,0 +1,74 @@
+# Private local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.local*
+.localrc.sh
+# Datasets, checkpoints and generated artifacts (also excludes local symlinks)
+/data/
+prepared_data/
+checkpoints/
+eval_result/
+outputs/
+logs/
+Log/
+wandb/
+.cache/
+*.ckpt
+*.pt
+*.pth
+*.hdf5
+*.h5
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.tar
+*.tar.gz
+*.zip
+*.whl
+*.mp4
+*.avi
+# Build products and editor state
+__pycache__/
+*.py[cod]
+*.so
+*.so.*
+*.a
+*.o
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+.vscode/
+.idea/
+.DS_Store
+*.log
+*.tmp
+*.bak
+*.swp
+# Local simulator and optional upstream installations
+third_party/isaacsim/
+third_party/IsaacLab/
+third_party/curobo/
+robot_workspace/third_parties/
+
+# Match directories and symlinks equally.
+/data
+prepared_data
+checkpoints
+eval_result
+
+*.local.yaml
+*.local.yml
+
+# Large simulator texture is in the ModelScope asset bundle.
+/assets/scene/base0.exr
+/robot_workspace/data
+/third_party/TacEx/source/tacex_assets/tacex_assets/data/

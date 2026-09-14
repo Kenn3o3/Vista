@@ -1,0 +1,22 @@
+defaults:
+  - train_vista_so2
+  - _self_
+
+name: vista_so2_concate
+
+policy:
+  _target_: vista.policy.vista_so2_concate_policy.VISTAPolicy
+  tactile_sides: ["left"]
+
+logging:
+  name: vista_so2_concate_demo${n_demo}
+  tags: ["${name}", "${task_name}", "${exp_name}", "fusion_ablation", "concate", "so2"]
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}_demo${n_demo}
+    subdir: ${hydra.job.num}
