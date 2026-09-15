@@ -4,7 +4,7 @@ Official code for **Equivariant Visual-Tactile Diffusion Policy for Contact-Rich
 
 VISTA fuses wrist vision and tactile spherical features, aligns the representation with the workspace using the end-effector orientation, and predicts action chunks with a finite-group equivariant diffusion policy.
 
-To our knowledge, VISTA is among the first to study workspace-level equivariance in an end-to-end visuotactile diffusion policy for contact-rich manipulation. This scope differs from tactile-equivariant methods such as [EquiTac](https://arxiv.org/abs/2511.07381), which focus on in-hand rotation correction.
+To our knowledge, VISTA is among the first to explore workspace-level equivariance in an end-to-end visuotactile diffusion policy for contact-rich manipulation.
 
 [Project website](https://vista-paper.github.io/) · [Real robot code](https://github.com/Kenn3o3/vt_franka) · [Simulation dataset](https://modelscope.cn/datasets/kenn3o3/MIDFOV_EXPERIMENT)
 
