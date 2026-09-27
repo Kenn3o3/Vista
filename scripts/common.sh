@@ -21,15 +21,9 @@ TASKS=(
 
 resolve_tasks() {
     if [[ $# -eq 0 || "$1" == "all" ]]; then
-        SELECTED_cd "$REPO_ROOT"
-export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-
-TASKS=("${TASKS[@]}")
+        SELECTED_TASKS=("${TASKS[@]}")
     else
-        SELECTED_cd "$REPO_ROOT"
-export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
-
-TASKS=("$@")
+        SELECTED_TASKS=("$@")
     fi
 }
 

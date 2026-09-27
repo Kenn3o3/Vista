@@ -1,3 +1,5 @@
+# Older Python 3.9 / PyTorch 2.1 lock. Do not install this file.
+# The runnable environment is the Python 3.10 setup in README.md.
 name: vista
 channels:
   - pytorch

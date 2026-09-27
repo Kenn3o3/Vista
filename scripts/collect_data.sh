@@ -17,7 +17,7 @@ resolve_tasks "$@"
 print_selected_tasks
 
 for task in "${SELECTED_TASKS[@]}"; do
-    python -m univtac.data.collect "$task" \
+    bash "$SCRIPT_DIR/sim_python.sh" -m univtac.data.collect "$task" \
         --experiment-name "$EXPERIMENT_NAME" \
         --episode-num "$NUM_EPISODES"
 done

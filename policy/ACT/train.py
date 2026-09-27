@@ -267,7 +267,7 @@ def train_act(
     run_id: str | None = None,
     seed: int = 0,
     gpu: str | None = None,
-    conda_env: str = "isp",
+    conda_env: str | None = None,
     batch_size: int | None = None,
     val_batch_size: int | None = None,
     num_epochs: int | None = None,
@@ -387,7 +387,7 @@ def main() -> None:
     parser.add_argument("--run-id", type=str, default=None)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--gpu", type=str, default=None)
-    parser.add_argument("--conda-env", type=str, default="isp")
+    parser.add_argument("--conda-env", type=str, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--val-batch-size", type=int, default=None)
     parser.add_argument("--num-epochs", type=int, default=None, help="Mapped to ACT num_steps.")

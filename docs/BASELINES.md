@@ -1,6 +1,6 @@
 # Baselines and ablations
 
-Use the reference Vista environment. The named configs record each model's own observation and action conventions; changing those conventions invalidates checkpoint compatibility.
+Use the Python 3.10 `vista` environment from the [README](../README.md). The named configs record each model's own observation and action conventions; changing those conventions invalidates checkpoint compatibility.
 
 | Method | Preparation | Training |
 | --- | --- | --- |

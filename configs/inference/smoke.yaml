@@ -1,7 +1,0 @@
-# One action chunk for simulator setup checks; not a task-success evaluation.
-postprocessing: normal
-exec_horizon: 8
-scheduler: ddim
-num_inference_steps: 8
-max_inferences: 1
-debug_dump: false

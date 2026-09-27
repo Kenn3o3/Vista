@@ -231,7 +231,9 @@ def conda_env_args(conda_env: str) -> list[str]:
     return ["-n", conda_env]
 
 
-def python_executable_for_env(conda_env: str) -> str:
+def python_executable_for_env(conda_env: str | None) -> str:
+    if not conda_env:
+        return sys.executable
     conda_prefix = os.environ.get("CONDA_PREFIX")
     if conda_prefix:
         candidate = Path(conda_prefix) / "bin" / "python"
@@ -339,7 +341,7 @@ def clean_cross_conda_env(conda_env: str, gpu: str | None) -> dict[str, str | No
     if gpu is not None:
         env["CUDA_VISIBLE_DEVICES"] = gpu
     current_env = os.environ.get("CONDA_DEFAULT_ENV")
-    if current_env and current_env != conda_env:
+    if conda_env and current_env and current_env != conda_env:
         for key in _CROSS_ENV_COMPILER_VARS:
             env[key] = None
         for key in _CROSS_ENV_CONDA_VARS:
@@ -361,7 +363,7 @@ def train_dp(
     run_id: str | None = None,
     seed: int = 0,
     gpu: str | None = None,
-    conda_env: str = "isp",
+    conda_env: str | None = None,
     batch_size: int | None = None,
     val_batch_size: int | None = None,
     num_epochs: int | None = None,
@@ -514,7 +516,7 @@ def clean_main() -> None:
     parser.add_argument("--run-id", type=str, default=None)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--gpu", type=str, default=None)
-    parser.add_argument("--conda-env", type=str, default="isp")
+    parser.add_argument("--conda-env", type=str, default=None)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--val-batch-size", type=int, default=None)
     parser.add_argument("--num-epochs", type=int, default=None)

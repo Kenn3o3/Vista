@@ -7,7 +7,7 @@ source "$SCRIPT_DIR/common.sh"
 
 if [[ $# -lt 4 ]]; then
     echo "Usage: $0 EXPERIMENT_NAME CONFIG_NAME N_DEMO TASK|all [TASK ...] [-- extra prepare args...]" >&2
-    echo "Example: $0 MIDFOV_EXPERIMENT vital 50 insert_HDMI -- --overwrite" >&2
+    echo "Example: $0 MIDFOV_EXPERIMENT act 50 lift_can -- --overwrite" >&2
     exit 1
 fi
 

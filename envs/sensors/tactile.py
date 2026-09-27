@@ -277,8 +277,6 @@ class VisualTactileSensor:
         self.attach_to_init = np.linalg.inv(init_trans)
         self.attach_to_init = torch.tensor(self.attach_to_init, dtype=torch.float64, device=self.device)
 
-        self.sensor.marker_motion_simulator.marker_motion_sim.init_vertices()
-
     def get_attach_pose(self):
         if type(self.attachment.isaaclab_rigid_object) is Articulation:
             # this only works when rigid body is an articulation

@@ -1,4 +1,0 @@
-postprocessing: normal
-exec_horizon: 8
-max_inferences: 20
-debug_dump: false
